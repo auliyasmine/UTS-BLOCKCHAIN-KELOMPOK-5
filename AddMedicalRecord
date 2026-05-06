@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract AddMedicalRecord {
+
+    struct Patient {
+        bool isRegistered;
+    }
+
+    struct MedicalRecord {
+        bytes32 docHash;
+        string ipfsCID;
+        string diagnosis;
+        address doctor;
+        uint timestamp;
+    }
+
+    mapping(address => Patient) public patients;
+    mapping(address => MedicalRecord[]) public records;
+    mapping(address => mapping(address => bool)) public accessControl;
+
+    event RecordAdded(address patient, address doctor, bytes32 docHash, uint timestamp);
+
+    // PSEUDOCODE
+    /*
+    FUNCTION addMedicalRecord(_patient, _docHash, _ipfsCID, _diagnosis):
+      REQUIRE patient[_patient].isRegistered == true
+      REQUIRE accessControl[_patient][msg.sender] == true
+      CREATE record:
+        { docHash, ipfsCID, diagnosis, doctor: msg.sender, timestamp: block.timestamp }
+      APPEND record to records[_patient] array
+      EMIT RecordAdded(_patient, msg.sender, _docHash, block.timestamp)
+    */
+
+    function addMedicalRecord(
+        address _patient,
+        bytes32 _docHash,
+        string memory _ipfsCID,
+        string memory _diagnosis
+    ) public {
+        require(patients[_patient].isRegistered == true, "Patient not registered");
+
+        require(accessControl[_patient][msg.sender] == true, "No access");
+
+        records[_patient].push(
+            MedicalRecord(
+                _docHash,
+                _ipfsCID,
+                _diagnosis,
+                msg.sender,
+                block.timestamp
+            )
+        );
+
+        emit RecordAdded(_patient, msg.sender, _docHash, block.timestamp);
+    }
+}
